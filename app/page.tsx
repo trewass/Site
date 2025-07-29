@@ -1,5 +1,5 @@
 import Header from '@/components/Header'
-import Stories from '@/components/Stories'
+import StoriesAirtable from '@/components/StoriesAirtable'
 
 export default function Home() {
   return (
@@ -41,8 +41,8 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Stories Section */}
-        <Stories />
+             {/* Stories Section */}
+     <StoriesAirtable />
 
         {/* 3 СТОЛПА Section */}
         <section className="py-24 bg-neutral-50">

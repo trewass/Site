@@ -1,6 +1,9 @@
+'use client'
 import Header from '@/components/Header'
+import { useRouter } from 'next/navigation'
 
 export default function KeisyPage() {
+  const router = useRouter()
   const cases = [
     {
       id: 1,
@@ -70,7 +73,7 @@ export default function KeisyPage() {
           <div className="container-custom">
             <div className="space-y-24">
               {cases.map((caseItem) => (
-                <div key={caseItem.id} className="bg-neutral-50 rounded-2xl p-8 group cursor-pointer hover:shadow-lg transition-all duration-200" onClick={() => window.location.href = caseItem.projectUrl}>
+                <div key={caseItem.id} className="bg-neutral-50 rounded-2xl p-8 group cursor-pointer hover:shadow-lg transition-all duration-200" onClick={() => router.push(caseItem.projectUrl)}>
                   {/* Case Header */}
                   <div className="mb-8">
                     <div className="flex items-center gap-4 mb-4">
