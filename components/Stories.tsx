@@ -11,6 +11,8 @@ interface Story {
   id: number
   title: string
   preview: string
+  type: 'story' | 'project_gallery' // обычная story или переход на детальную страницу
+  projectUrl?: string // URL детальной страницы для project_gallery
   content: {
     image: string
     description: string
@@ -25,7 +27,8 @@ const stories: Story[] = [
   {
     id: 1,
     title: "Кухня в работе",
-    preview: "/api/placeholder/80/80",
+    preview: "/api/placeholder/90/110",
+    type: "story",
     content: {
       image: "/api/placeholder/800/600",
       description: "Современная кухня с островом в процессе монтажа. Внимание к деталям и качеству исполнения.",
@@ -38,7 +41,8 @@ const stories: Story[] = [
   {
     id: 2,
     title: "Новый заказ",
-    preview: "/api/placeholder/80/80",
+    preview: "/api/placeholder/90/110",
+    type: "story",
     content: {
       image: "/api/placeholder/800/600",
       description: "Приняли новый заказ на гардеробную систему. Начинаем с замеров и планирования.",
@@ -51,7 +55,8 @@ const stories: Story[] = [
   {
     id: 3,
     title: "Монтаж шкафа",
-    preview: "/api/placeholder/80/80",
+    preview: "/api/placeholder/90/110",
+    type: "story",
     content: {
       image: "/api/placeholder/800/600",
       description: "Установка шкафа-купе в спальне. Точность и аккуратность на каждом этапе.",
@@ -64,7 +69,8 @@ const stories: Story[] = [
   {
     id: 4,
     title: "Довольный клиент",
-    preview: "/api/placeholder/80/80",
+    preview: "/api/placeholder/90/110",
+    type: "story",
     content: {
       image: "/api/placeholder/800/600",
       description: "Финальная сдача проекта. Клиент доволен результатом и рекомендует нас друзьям.",
@@ -77,7 +83,8 @@ const stories: Story[] = [
   {
     id: 5,
     title: "В цеху",
-    preview: "/api/placeholder/80/80",
+    preview: "/api/placeholder/90/110",
+    type: "story",
     content: {
       image: "/api/placeholder/800/600",
       description: "Производство мебели в нашем цеху. Используем только качественные материалы.",
@@ -90,7 +97,8 @@ const stories: Story[] = [
   {
     id: 6,
     title: "Замеры объекта",
-    preview: "/api/placeholder/80/80",
+    preview: "/api/placeholder/90/110",
+    type: "story",
     content: {
       image: "/api/placeholder/800/600",
       description: "Точные замеры помещения - основа качественного проекта. Никаких приблизительных расчетов.",
@@ -103,26 +111,15 @@ const stories: Story[] = [
   {
     id: 7,
     title: "Готовый проект",
-    preview: "/api/placeholder/80/80",
+    preview: "/api/placeholder/90/110",
+    type: "project_gallery",
+    projectUrl: "/projects/kitchen-modern-1",
     content: {
       image: "/api/placeholder/800/600",
       description: "Завершенный проект кухни-гостиной. Функциональность и эстетика в гармонии.",
       actionButton: {
-        text: "Смотреть работы",
-        link: "/raboty"
-      }
-    }
-  },
-  {
-    id: 8,
-    title: "Наша команда",
-    preview: "/api/placeholder/80/80",
-    content: {
-      image: "/api/placeholder/800/600",
-      description: "Наша команда профессионалов. 15 человек, каждый - эксперт в своей области.",
-      actionButton: {
-        text: "Узнать о команде",
-        link: "/process"
+        text: "Смотреть все фото",
+        link: "/projects/kitchen-modern-1"
       }
     }
   }
@@ -133,8 +130,14 @@ export default function Stories() {
   const [currentStoryIndex, setCurrentStoryIndex] = useState(0)
 
   const openStory = (story: Story, index: number) => {
-    setSelectedStory(story)
-    setCurrentStoryIndex(index)
+    if (story.type === 'project_gallery' && story.projectUrl) {
+      // Переход на детальную страницу проекта
+      window.location.href = story.projectUrl
+    } else {
+      // Открытие полноэкранного просмотра обычной story
+      setSelectedStory(story)
+      setCurrentStoryIndex(index)
+    }
   }
 
   const closeStory = () => {
@@ -191,20 +194,20 @@ export default function Stories() {
                 clickable: true,
                 el: '.swiper-pagination',
               }}
-              breakpoints={{
-                640: {
-                  slidesPerView: 4,
-                  spaceBetween: 20,
-                },
-                768: {
-                  slidesPerView: 6,
-                  spaceBetween: 20,
-                },
-                1024: {
-                  slidesPerView: 8,
-                  spaceBetween: 20,
-                },
-              }}
+                             breakpoints={{
+                 640: {
+                   slidesPerView: 4,
+                   spaceBetween: 20,
+                 },
+                 768: {
+                   slidesPerView: 6,
+                   spaceBetween: 20,
+                 },
+                 1024: {
+                   slidesPerView: 7,
+                   spaceBetween: 20,
+                 },
+               }}
               className="stories-swiper"
             >
               {stories.map((story, index) => (
@@ -213,11 +216,11 @@ export default function Stories() {
                     className="flex flex-col items-center cursor-pointer group"
                     onClick={() => openStory(story, index)}
                   >
-                                         {/* Story Circle */}
+                                         {/* Story Card */}
                      <div className="relative mb-3">
-                       <div className="w-20 h-20 md:w-24 md:h-24 rounded-full overflow-hidden border-2 border-neutral-300 bg-gradient-to-br from-neutral-100 to-neutral-200 flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
+                       <div className="w-[70px] h-[85px] md:w-[90px] md:h-[110px] rounded-2xl overflow-hidden border-2 border-neutral-300 bg-gradient-to-br from-neutral-100 to-neutral-200 flex items-center justify-center group-hover:scale-105 transition-transform duration-200 shadow-sm">
                          <div className="w-full h-full bg-gradient-to-br from-neutral-200 to-neutral-300 flex items-center justify-center">
-                           <svg className="w-8 h-8 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                           <svg className="w-6 h-6 md:w-8 md:h-8 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                            </svg>
                          </div>

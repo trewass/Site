@@ -15,7 +15,8 @@ export default function RabotyPage() {
       task: "Современная кухня с островом для большой семьи",
       solution: "Кухня в стиле минимализм с островом, встроенной техникой и системой хранения",
       result: "Функциональное пространство для готовки и общения",
-      image: "/placeholder-kitchen.jpg"
+      image: "/placeholder-kitchen.jpg",
+      projectUrl: "/projects/kitchen-modern-1"
     },
     {
       id: 2,
@@ -25,7 +26,8 @@ export default function RabotyPage() {
       task: "Объединение кухни и гостиной в единое пространство",
       solution: "Кухонный гарнитур с барной стойкой и зоной отдыха",
       result: "Современное пространство для жизни и приема гостей",
-      image: "/placeholder-kitchen-2.jpg"
+      image: "/placeholder-kitchen-2.jpg",
+      projectUrl: "/projects/kitchen-living-room"
     },
     {
       id: 3,
@@ -35,7 +37,8 @@ export default function RabotyPage() {
       task: "Система хранения премиум-класса",
       solution: "Встроенный гардероб с системой выдвижных ящиков и вешалок",
       result: "Организованное пространство для одежды и аксессуаров",
-      image: "/placeholder-wardrobe.jpg"
+      image: "/placeholder-wardrobe.jpg",
+      projectUrl: "/projects/wardrobe-case-2"
     },
     {
       id: 4,
@@ -45,7 +48,8 @@ export default function RabotyPage() {
       task: "Функциональный шкаф для спальни",
       solution: "Шкаф-купе с зеркальными дверями и внутренней подсветкой",
       result: "Стильное и практичное решение для хранения",
-      image: "/placeholder-wardrobe-2.jpg"
+      image: "/placeholder-wardrobe-2.jpg",
+      projectUrl: "/projects/wardrobe-bedroom"
     },
     {
       id: 5,
@@ -55,7 +59,8 @@ export default function RabotyPage() {
       task: "Функциональная ванная комната",
       solution: "Встроенная мебель с зеркалами и подсветкой",
       result: "Комфортное пространство для утренних процедур",
-      image: "/placeholder-bathroom.jpg"
+      image: "/placeholder-bathroom.jpg",
+      projectUrl: "/projects/bathroom-furniture-3"
     },
     {
       id: 6,
@@ -65,7 +70,8 @@ export default function RabotyPage() {
       task: "Комплексная меблировка частного дома",
       solution: "Кухня, гардеробы, ванные, гостиная - все помещения",
       result: "Единый стиль и функциональность во всем доме",
-      image: "/placeholder-house.jpg"
+      image: "/placeholder-house.jpg",
+      projectUrl: "/projects/full-house-complex"
     }
   ]
 
@@ -127,20 +133,24 @@ export default function RabotyPage() {
             {filteredProjects.length > 0 ? (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
                 {filteredProjects.map((project) => (
-                  <div key={project.id} className="group cursor-pointer">
+                  <div key={project.id} className="group">
                     {/* Project Image */}
-                    <div className="aspect-[4/3] bg-neutral-100 rounded-2xl mb-6 overflow-hidden">
-                      <div className="w-full h-full bg-gradient-to-br from-neutral-200 to-neutral-300 flex items-center justify-center">
-                        <svg className="w-16 h-16 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
+                    <a href={project.projectUrl} className="block">
+                      <div className="aspect-[4/3] bg-neutral-100 rounded-2xl mb-6 overflow-hidden group-hover:shadow-lg transition-shadow">
+                        <div className="w-full h-full bg-gradient-to-br from-neutral-200 to-neutral-300 flex items-center justify-center">
+                          <svg className="w-16 h-16 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                        </div>
                       </div>
-                    </div>
+                    </a>
 
                     {/* Project Info */}
                     <div className="space-y-4">
                       <div className="flex items-center gap-4 mb-4">
-                        <h3 className="heading-md">{project.title}</h3>
+                        <h3 className="heading-md group-hover:text-neutral-700 transition-colors">
+                          <a href={project.projectUrl}>{project.title}</a>
+                        </h3>
                         <span className="inline-flex items-center rounded-full bg-neutral-100 px-3 py-1 text-xs font-medium text-neutral-700">
                           {project.location}
                         </span>
@@ -163,9 +173,9 @@ export default function RabotyPage() {
                       </div>
 
                       {/* CTA Button */}
-                      <button className="btn-primary mt-6">
-                        Обсудить объект
-                      </button>
+                      <a href={project.projectUrl} className="btn-primary mt-6 inline-block">
+                        Смотреть детали
+                      </a>
                     </div>
                   </div>
                 ))}
