@@ -13,7 +13,8 @@ export default function KeisyPage() {
       solution: "Создали кухню в стиле минимализм с большим островом, встроенной техникой премиум-класса и продуманной системой хранения. Использовали фасады в эмали и столешницу из кварца.",
       result: "Клиенты в восторге от результата. Кухня стала центром дома - здесь готовят, едят, общаются. Все продумано до мелочей, техника спрятана, но легко доступна.",
       testimonial: "Александр, как думаете, будет красиво? - Да, будет красиво, вы будете хлопать в ладоши. И мы действительно хлопали!",
-      image: "/case-kitchen.jpg"
+      image: "/case-kitchen.jpg",
+      projectUrl: "/projects/kitchen-modern-1"
     },
     {
       id: 2,
@@ -26,7 +27,8 @@ export default function KeisyPage() {
       solution: "Спроектировали встроенный гардероб с системой выдвижных ящиков, вешалок разной высоты, полками для обуви и аксессуаров. Добавили зеркала и подсветку.",
       result: "Теперь все вещи на своих местах, легко найти нужное. Гардероб выглядит как в бутике, но функциональность превзошла ожидания.",
       testimonial: "Наконец-то я знаю, где что лежит! И выглядит все очень статусно.",
-      image: "/case-wardrobe.jpg"
+      image: "/case-wardrobe.jpg",
+      projectUrl: "/projects/wardrobe-case-2"
     },
     {
       id: 3,
@@ -39,7 +41,8 @@ export default function KeisyPage() {
       solution: "Разработали концепцию для всего дома, создали единый стиль. Кухня стала центром, гардеробы организованы под каждого, ванные функциональны и красивы.",
       result: "Дом получился уютным и функциональным. Каждое помещение продумано до мелочей, но все в едином стиле. Клиенты говорят, что дом стал настоящим домом.",
       testimonial: "Теперь мы действительно живем, а не существуем в доме. Все продумано для комфорта.",
-      image: "/case-house.jpg"
+      image: "/case-house.jpg",
+      projectUrl: "/projects/full-house-complex"
     }
   ]
 
@@ -67,11 +70,11 @@ export default function KeisyPage() {
           <div className="container-custom">
             <div className="space-y-24">
               {cases.map((caseItem) => (
-                <div key={caseItem.id} className="bg-neutral-50 rounded-2xl p-8">
+                <div key={caseItem.id} className="bg-neutral-50 rounded-2xl p-8 group cursor-pointer hover:shadow-lg transition-all duration-200" onClick={() => window.location.href = caseItem.projectUrl}>
                   {/* Case Header */}
                   <div className="mb-8">
                     <div className="flex items-center gap-4 mb-4">
-                      <h2 className="heading-lg">{caseItem.title}</h2>
+                      <h2 className="heading-lg group-hover:text-neutral-700 transition-colors">{caseItem.title}</h2>
                       <span className="inline-flex items-center rounded-full bg-neutral-200 px-3 py-1 text-xs font-medium text-neutral-700">
                         {caseItem.location}
                       </span>
@@ -94,7 +97,7 @@ export default function KeisyPage() {
                   </div>
 
                   {/* Case Image */}
-                  <div className="aspect-[16/9] bg-neutral-100 rounded-xl mb-8 overflow-hidden">
+                  <div className="aspect-[16/9] bg-neutral-100 rounded-xl mb-8 overflow-hidden group-hover:scale-[1.02] transition-transform duration-200">
                     <div className="w-full h-full bg-gradient-to-br from-neutral-200 to-neutral-300 flex items-center justify-center">
                       <svg className="w-16 h-16 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -133,6 +136,13 @@ export default function KeisyPage() {
                         <p className="text-sm text-neutral-500">— Клиент</p>
                       </div>
                     </div>
+                  </div>
+
+                  {/* CTA Button */}
+                  <div className="mt-6 text-center">
+                    <span className="btn-primary inline-block">
+                      Смотреть детали проекта
+                    </span>
                   </div>
                 </div>
               ))}
