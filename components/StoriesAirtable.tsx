@@ -35,10 +35,22 @@ export default function StoriesAirtable() {
       )
       
       const data = await response.json()
+      
+      // Уникальные описания для каждой Story
+      const storyDescriptions = {
+        1: "Смотрите как происходит профессиональный монтаж кухонного гарнитура",
+        2: "Результат нашей работы - довольные клиенты и красивая кухня", 
+        3: "Каждая деталь имеет значение - качественная фурнитура и материалы",
+        4: "Мы используем только проверенные материалы и комплектующие",
+        5: "Современный дизайн кухни с акцентом на функциональность",
+        6: "Эргономичное пространство - каждый сантиметр продуман",
+        7: "Счастливые клиенты - наша главная награда за качественную работу"
+      }
+      
       return data.records.map((record: any) => ({
         id: record.id,
         title: record.fields['Объект'] || 'Наша работа',
-        description: record.fields['Описание'] || '',
+        description: record.fields['Описание'] || storyDescriptions[record.fields['Порядок Stories'] as keyof typeof storyDescriptions] || 'Наша работа',
         mediaUrl: record.fields['Ссылка'],
         mediaType: record.fields['Тип файла'] === 'video/mp4' ? 'video' : 'image',
         order: record.fields['Порядок Stories']
@@ -112,7 +124,7 @@ export default function StoriesAirtable() {
             <p className="text-body text-neutral-600">Загляните за кулисы нашей работы</p>
           </div>
           
-          <div className="flex gap-5 overflow-x-auto pb-4 scrollbar-hide">
+          <div className="flex justify-center gap-5 overflow-x-auto pb-4 scrollbar-hide max-w-4xl mx-auto">
             {stories.map((story, index) => (
               <div 
                 key={story.id} 
@@ -126,16 +138,16 @@ export default function StoriesAirtable() {
                         src={story.mediaUrl} 
                         muted 
                         preload="metadata"
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover rounded-xl"
                       />
                     ) : (
                       <img 
                         src={story.mediaUrl} 
                         alt={story.title}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover rounded-xl"
                       />
                     )}
-                    <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-black/60 to-transparent flex items-end justify-center pb-1">
+                    <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-black/60 to-transparent flex items-end justify-center pb-1 rounded-b-2xl">
                       <span className="text-white text-sm">
                         {story.mediaType === 'video' ? '▶' : '📷'}
                       </span>
