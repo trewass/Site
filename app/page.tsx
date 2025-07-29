@@ -1,4 +1,5 @@
 import Header from '@/components/Header'
+import Stories from '@/components/Stories'
 
 export default function Home() {
   return (
@@ -29,16 +30,19 @@ export default function Home() {
               
               {/* Кнопки */}
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <button className="btn-primary">
+                <a href="/raboty" className="btn-primary">
                   Смотреть работы
-                </button>
-                <button className="btn-secondary">
+                </a>
+                <a href="/contacts" className="btn-secondary">
                   Консультация
-                </button>
+                </a>
               </div>
             </div>
           </div>
         </section>
+
+        {/* Stories Section */}
+        <Stories />
 
         {/* 3 СТОЛПА Section */}
         <section className="py-24 bg-neutral-50">
