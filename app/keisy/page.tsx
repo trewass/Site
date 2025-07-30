@@ -2,11 +2,11 @@
 import Header from '@/components/Header'
 import { useState, useEffect } from 'react'
 
-// Airtable конфигурация
+// Airtable конфигурация - ИСПРАВЛЕННАЯ
 const AIRTABLE_CONFIG = {
   API_KEY: 'patQfujQaKiRKW0ix.9968ac4d5d84d30dc7f7ac663c993282324a6cfb07125313b2c58268f943b4ee',
-  BASE_ID: 'appQfujQaKiRKW0ix',
-  TABLE_ID: 'tblQfujQaKiRKW0ix'
+  BASE_ID: 'appayVD9m1J1bR13Z', // ← ИСПРАВЛЕНО
+  TABLE_ID: 'tblg1UR9TmB4gLS7i'  // ← ИСПРАВЛЕНО
 }
 
 interface CasePhoto {
@@ -24,6 +24,17 @@ interface Case {
   city: string
   previewImage: string
   photos: CasePhoto[]
+}
+
+// Функция для извлечения города из названия проекта
+function extractCityFromProjectName(projectName: string): string {
+  const name = projectName.toLowerCase()
+  if (name.includes('ялта')) return 'Ялта'
+  if (name.includes('феодосия')) return 'Феодосия'  
+  if (name.includes('бахчисарай')) return 'Бахчисарай'
+  if (name.includes('краснодар')) return 'Краснодар'
+  if (name.includes('сочи')) return 'Сочи'
+  return 'Крым'
 }
 
 // Fallback данные на случай, если Airtable не работает
@@ -121,10 +132,10 @@ export default function KeisyPage() {
       console.log('📋 Конфигурация:', AIRTABLE_CONFIG)
       
       const response = await fetch(
-        `https://api.airtable.com/v0/${AIRTABLE_CONFIG.BASE_ID}/${AIRTABLE_CONFIG.TABLE_ID}?filterByFormula={Кейс}=1`,
+        `https://api.airtable.com/v0/appayVD9m1J1bR13Z/tblg1UR9TmB4gLS7i?filterByFormula={Кейс}=1`,
         {
           headers: { 
-            'Authorization': `Bearer ${AIRTABLE_CONFIG.API_KEY}`,
+            'Authorization': `Bearer patQfujQaKiRKW0ix.9968ac4d5d84d30dc7f7ac663c993282324a6cfb07125313b2c58268f943b4ee`,
             'Content-Type': 'application/json'
           }
         }
@@ -151,7 +162,7 @@ export default function KeisyPage() {
       
       data.records.forEach((record: any) => {
         const projectName = record.fields['Объект'] || 'Проект'
-        const city = record.fields['Город'] || 'Крым'
+        const city = extractCityFromProjectName(projectName)
         
         console.log('📝 Обрабатываем запись:', { projectName, city, fields: record.fields })
         
@@ -159,11 +170,16 @@ export default function KeisyPage() {
           groupedCases[projectName] = []
         }
         
+        // Используем превью для изображений, основную ссылку для видео
+        const mediaUrl = record.fields['Превью'] && record.fields['Тип файла'] !== 'video/mp4' 
+          ? record.fields['Превью'][0]?.url 
+          : record.fields['Ссылка']
+        
         groupedCases[projectName].push({
           id: record.id,
-          mediaUrl: record.fields['Ссылка'],
+          mediaUrl: mediaUrl,
           mediaType: record.fields['Тип файла'] === 'video/mp4' ? 'video' : 'image',
-          description: record.fields['Описание'],
+          description: record.fields['Описание фото'] || record.fields['Описание'] || '',
           projectName,
           city
         })
@@ -172,15 +188,13 @@ export default function KeisyPage() {
       console.log('📦 Сгруппированные кейсы:', groupedCases)
       
       // Преобразуем в массив Case
-      const result = Object.values(groupedCases)
-        .slice(0, 3) // Ограничиваем до 3 кейсов
-        .map((photos, index) => ({
-          id: `case-${index + 1}`,
-          projectName: photos[0].projectName,
-          city: photos[0].city,
-          previewImage: photos[0].mediaUrl,
-          photos
-        }))
+      const result = Object.entries(groupedCases).map(([projectName, photos], index) => ({
+        id: `case-${index + 1}`,
+        projectName: photos[0].projectName,
+        city: photos[0].city,
+        previewImage: photos[0].mediaUrl,
+        photos
+      }))
       
       console.log('✅ Финальный результат:', result)
       setCases(result)
