@@ -149,6 +149,7 @@ export default function KeisyPage() {
       
       const data = await response.json()
       console.log('📊 Данные от Airtable:', data)
+      console.log('🔍 Найдено записей с Кейс=1:', data.records.length)
       
       if (!data.records || data.records.length === 0) {
         console.log('⚠️ Нет записей с Кейс=1, используем fallback данные')
@@ -186,8 +187,9 @@ export default function KeisyPage() {
       })
       
       console.log('📦 Сгруппированные кейсы:', groupedCases)
+      console.log('📦 Уникальных проектов:', Object.keys(groupedCases).length)
       
-      // Преобразуем в массив Case
+      // Преобразуем в массив Case - БЕЗ ОГРАНИЧЕНИЙ!
       const result = Object.entries(groupedCases).map(([projectName, photos], index) => ({
         id: `case-${index + 1}`,
         projectName: photos[0].projectName,
@@ -197,6 +199,7 @@ export default function KeisyPage() {
       }))
       
       console.log('✅ Финальный результат:', result)
+      console.log('✅ Финальных кейсов для отображения:', result.length)
       setCases(result)
       setLoading(false)
     } catch (error) {
@@ -400,88 +403,194 @@ export default function KeisyPage() {
         </section>
       </main>
 
-      {/* Modal для просмотра фотографий */}
+      {/* Улучшенный Modal для просмотра кейса */}
       {isModalOpen && selectedCase && (
-        <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4">
-          <div className="relative w-full max-w-6xl max-h-full">
-            {/* Кнопка закрытия */}
-            <button 
-              onClick={closeModal}
-              className="absolute top-4 right-4 z-10 text-white hover:text-gray-300 transition-colors"
-            >
-              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+        <div className="fixed inset-0 bg-black bg-opacity-95 z-50 overflow-y-auto">
+          <div className="min-h-screen flex items-start justify-center p-4">
+            <div className="relative w-full max-w-7xl bg-white rounded-lg overflow-hidden">
+              
+              {/* Header модального окна */}
+              <div className="bg-neutral-50 px-6 py-4 border-b">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-2xl font-bold text-neutral-900">
+                      {selectedCase.projectName}
+                    </h2>
+                    <p className="text-neutral-600">{selectedCase.city}</p>
+                  </div>
+                  <button 
+                    onClick={closeModal}
+                    className="text-neutral-500 hover:text-neutral-700 transition-colors"
+                  >
+                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
 
-            {/* Навигация */}
-            {currentPhotoIndex > 0 && (
-              <button 
-                onClick={prevPhoto}
-                className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10 text-white hover:text-gray-300 transition-colors"
-              >
-                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-              </button>
-            )}
+              {/* Основной контент */}
+              <div className="flex flex-col lg:flex-row">
+                
+                {/* Левая часть - Превью галерея */}
+                <div className="lg:w-1/3 p-6 border-r border-neutral-200">
+                  <h3 className="text-lg font-semibold mb-4">Фотографии проекта</h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    {selectedCase.photos.map((photo, index) => (
+                      <div 
+                        key={photo.id}
+                        className={`aspect-square bg-neutral-100 rounded-lg overflow-hidden cursor-pointer border-2 transition-all ${
+                          index === currentPhotoIndex ? 'border-neutral-800' : 'border-transparent hover:border-neutral-300'
+                        }`}
+                        onClick={() => setCurrentPhotoIndex(index)}
+                      >
+                        {photo.mediaType === 'video' ? (
+                          <div className="w-full h-full bg-neutral-200 flex items-center justify-center">
+                            <svg className="w-8 h-8 text-neutral-500" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M8 5v14l11-7z"/>
+                            </svg>
+                          </div>
+                        ) : (
+                          <img 
+                            src={photo.mediaUrl} 
+                            alt={`${selectedCase.projectName} - ${index + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                        )}
+                      </div>
+                    ))}
+                  </div>
 
-            {currentPhotoIndex < selectedCase.photos.length - 1 && (
-              <button 
-                onClick={nextPhoto}
-                className="absolute right-4 top-1/2 transform -translate-y-1/2 z-10 text-white hover:text-gray-300 transition-colors"
-              >
-                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
-            )}
+                  {/* История клиента */}
+                  <div className="mt-8">
+                    <h3 className="text-lg font-semibold mb-4">История проекта</h3>
+                    <div className="space-y-4">
+                      <div>
+                        <h4 className="font-medium text-neutral-900 mb-2">Задача</h4>
+                        <p className="text-sm text-neutral-600 leading-relaxed">
+                          Клиент {selectedCase.projectName} из города {selectedCase.city} обратился с задачей создания 
+                          функционального и стильного пространства. Требовалось учесть все пожелания семьи и 
+                          особенности помещения.
+                        </p>
+                      </div>
+                      
+                      <div>
+                        <h4 className="font-medium text-neutral-900 mb-2">Решение</h4>
+                        <p className="text-sm text-neutral-600 leading-relaxed">
+                          Наша команда разработала индивидуальный проект с использованием качественных материалов. 
+                          Особое внимание уделили эргономике и функциональности каждого элемента.
+                        </p>
+                      </div>
+                      
+                      <div>
+                        <h4 className="font-medium text-neutral-900 mb-2">Результат</h4>
+                        <p className="text-sm text-neutral-600 leading-relaxed">
+                          Получили современное пространство, которое полностью соответствует потребностям клиента. 
+                          Все детали продуманы, качество выполнения на высшем уровне.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
-            {/* Фотография */}
-            <div className="w-full h-full flex items-center justify-center">
-              {selectedCase.photos[currentPhotoIndex].mediaType === 'video' ? (
-                <video 
-                  src={selectedCase.photos[currentPhotoIndex].mediaUrl}
-                  controls
-                  className="max-w-full max-h-full object-contain"
-                  autoPlay
-                  muted={false}
-                />
-              ) : (
-                <img 
-                  src={selectedCase.photos[currentPhotoIndex].mediaUrl}
-                  alt={`${selectedCase.projectName} - фото ${currentPhotoIndex + 1}`}
-                  className="max-w-full max-h-full object-contain"
-                />
-              )}
-            </div>
+                {/* Правая часть - Основное изображение */}
+                <div className="lg:w-2/3 p-6">
+                  <div className="aspect-[4/3] bg-neutral-100 rounded-lg overflow-hidden mb-4 relative group">
+                    {selectedCase.photos[currentPhotoIndex].mediaType === 'video' ? (
+                      <video 
+                        src={selectedCase.photos[currentPhotoIndex].mediaUrl}
+                        controls
+                        className="w-full h-full object-contain bg-black"
+                        autoPlay
+                        muted={false}
+                      />
+                    ) : (
+                      <>
+                        <img 
+                          src={selectedCase.photos[currentPhotoIndex].mediaUrl}
+                          alt={`${selectedCase.projectName} - фото ${currentPhotoIndex + 1}`}
+                          className="w-full h-full object-contain cursor-pointer"
+                          onClick={() => {
+                            // Открытие в полный экран при клике
+                            const img = new Image();
+                            img.src = selectedCase.photos[currentPhotoIndex].mediaUrl;
+                            const newWindow = window.open('', '_blank');
+                            if (newWindow) {
+                              newWindow.document.write(`
+                                <html>
+                                  <head><title>${selectedCase.projectName} - Фото ${currentPhotoIndex + 1}</title></head>
+                                  <body style="margin:0;background:#000;display:flex;align-items:center;justify-content:center;min-height:100vh;">
+                                    <img src="${img.src}" style="max-width:100%;max-height:100vh;object-fit:contain;" />
+                                  </body>
+                                </html>
+                              `);
+                            }
+                          }}
+                        />
+                        
+                        {/* Подсказка о полноэкранном режиме */}
+                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
+                          <div className="bg-white bg-opacity-90 px-3 py-2 rounded-lg text-sm font-medium">
+                            Нажмите для полноэкранного просмотра
+                          </div>
+                        </div>
+                      </>
+                    )}
+                    
+                    {/* Навигационные стрелки */}
+                    {currentPhotoIndex > 0 && (
+                      <button 
+                        onClick={prevPhoto}
+                        className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-80 hover:bg-opacity-100 rounded-full p-2 transition-all"
+                      >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                        </svg>
+                      </button>
+                    )}
 
-            {/* Информация */}
-            <div className="absolute bottom-4 left-4 right-4 text-white text-center">
-              <h3 className="text-lg font-semibold mb-2">
-                {selectedCase.projectName} - {selectedCase.city}
-              </h3>
-              <p className="text-sm opacity-80">
-                Фото {currentPhotoIndex + 1} из {selectedCase.photos.length}
-              </p>
-              {selectedCase.photos[currentPhotoIndex].description && (
-                <p className="text-sm opacity-70 mt-2">
-                  {selectedCase.photos[currentPhotoIndex].description}
-                </p>
-              )}
-            </div>
+                    {currentPhotoIndex < selectedCase.photos.length - 1 && (
+                      <button 
+                        onClick={nextPhoto}
+                        className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-80 hover:bg-opacity-100 rounded-full p-2 transition-all"
+                      >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
 
-            {/* Индикаторы */}
-            <div className="absolute bottom-16 left-1/2 transform -translate-x-1/2 flex gap-2">
-              {selectedCase.photos.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentPhotoIndex(index)}
-                  className={`w-3 h-3 rounded-full transition-colors ${
-                    index === currentPhotoIndex ? 'bg-white' : 'bg-white bg-opacity-50'
-                  }`}
-                />
-              ))}
+                  {/* Описание текущего фото */}
+                  <div className="bg-neutral-50 rounded-lg p-4">
+                    <h4 className="font-medium text-neutral-900 mb-2">
+                      Фото {currentPhotoIndex + 1} из {selectedCase.photos.length}
+                    </h4>
+                    <p className="text-sm text-neutral-600 leading-relaxed">
+                      {selectedCase.photos[currentPhotoIndex].description || 
+                      `Фотография проекта ${selectedCase.projectName} в городе ${selectedCase.city}. 
+                      Демонстрирует качество выполненной работы и внимание к деталям.`}
+                    </p>
+                    
+                    {/* Технические детали */}
+                    <div className="mt-3 flex gap-4 text-xs text-neutral-500">
+                      <span>Проект: {selectedCase.projectName}</span>
+                      <span>Город: {selectedCase.city}</span>
+                      <span>Тип: {selectedCase.photos[currentPhotoIndex].mediaType === 'video' ? 'Видео' : 'Фото'}</span>
+                    </div>
+                  </div>
+
+                  {/* Кнопки действий */}
+                  <div className="mt-6 flex gap-4">
+                    <button className="btn-primary">
+                      Заказать похожий проект
+                    </button>
+                    <button className="btn-secondary">
+                      Связаться с нами
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
