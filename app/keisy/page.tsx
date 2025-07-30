@@ -1,53 +1,151 @@
 'use client'
 import Header from '@/components/Header'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+
+// Airtable конфигурация
+const AIRTABLE_CONFIG = {
+  API_KEY: 'patQfujQaKiRKW0ix.9968ac4d5d84d30dc7f7ac663c993282324a6cfb07125313b2c58268f943b4ee',
+  BASE_ID: 'appQfujQaKiRKW0ix',
+  TABLE_ID: 'tblQfujQaKiRKW0ix'
+}
+
+interface CasePhoto {
+  id: string
+  mediaUrl: string
+  mediaType: 'image' | 'video'
+  description?: string
+  projectName: string
+  city: string
+}
+
+interface Case {
+  id: string
+  projectName: string
+  city: string
+  previewImage: string
+  photos: CasePhoto[]
+}
 
 export default function KeisyPage() {
-  const router = useRouter()
-  const cases = [
-    {
-      id: 1,
-      title: "Кухня в Ялте - история успеха",
-      location: "Ялта, Крым",
-      client: "Семья из 4 человек",
-      budget: "1 200 000 ₽",
-      duration: "45 дней",
-      challenge: "Нужна была современная кухня с островом для большой семьи, которая любит готовить и принимать гостей. Пространство было ограниченным, но хотелось функциональности и стиля.",
-      solution: "Создали кухню в стиле минимализм с большим островом, встроенной техникой премиум-класса и продуманной системой хранения. Использовали фасады в эмали и столешницу из кварца.",
-      result: "Клиенты в восторге от результата. Кухня стала центром дома - здесь готовят, едят, общаются. Все продумано до мелочей, техника спрятана, но легко доступна.",
-      testimonial: "Александр, как думаете, будет красиво? - Да, будет красиво, вы будете хлопать в ладоши. И мы действительно хлопали!",
-      image: "/case-kitchen.jpg",
-      projectUrl: "/projects/kitchen-modern-1"
-    },
-    {
-      id: 2,
-      title: "Гардероб в Сочи - организация пространства",
-      location: "Сочи, Краснодарский край",
-      client: "Предприниматель 45 лет",
-      budget: "800 000 ₽",
-      duration: "40 дней",
-      challenge: "Клиент хотел организовать хранение большой коллекции одежды и аксессуаров. Нужна была система, которая не только вместит все, но и будет удобной в использовании.",
-      solution: "Спроектировали встроенный гардероб с системой выдвижных ящиков, вешалок разной высоты, полками для обуви и аксессуаров. Добавили зеркала и подсветку.",
-      result: "Теперь все вещи на своих местах, легко найти нужное. Гардероб выглядит как в бутике, но функциональность превзошла ожидания.",
-      testimonial: "Наконец-то я знаю, где что лежит! И выглядит все очень статусно.",
-      image: "/case-wardrobe.jpg",
-      projectUrl: "/projects/wardrobe-case-2"
-    },
-    {
-      id: 3,
-      title: "Дом под ключ в Крыму - комплексный подход",
-      location: "Крым",
-      client: "Семья с детьми",
-      budget: "3 500 000 ₽",
-      duration: "6 месяцев",
-      challenge: "Нужно было обставить весь дом - кухню, гардеробы, ванные, гостиную. Важно было создать единый стиль во всех помещениях и учесть потребности каждого члена семьи.",
-      solution: "Разработали концепцию для всего дома, создали единый стиль. Кухня стала центром, гардеробы организованы под каждого, ванные функциональны и красивы.",
-      result: "Дом получился уютным и функциональным. Каждое помещение продумано до мелочей, но все в едином стиле. Клиенты говорят, что дом стал настоящим домом.",
-      testimonial: "Теперь мы действительно живем, а не существуем в доме. Все продумано для комфорта.",
-      image: "/case-house.jpg",
-      projectUrl: "/projects/full-house-complex"
+  const [cases, setCases] = useState<Case[]>([])
+  const [loading, setLoading] = useState(true)
+  const [selectedCase, setSelectedCase] = useState<Case | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0)
+
+  // Загрузка кейсов из Airtable
+  useEffect(() => {
+    loadCasesFromAirtable()
+  }, [])
+
+  async function loadCasesFromAirtable() {
+    try {
+      console.log('Загружаем кейсы из Airtable...')
+      const response = await fetch(
+        `https://api.airtable.com/v0/${AIRTABLE_CONFIG.BASE_ID}/${AIRTABLE_CONFIG.TABLE_ID}?filterByFormula={Кейс}=1`,
+        {
+          headers: { 
+            'Authorization': `Bearer ${AIRTABLE_CONFIG.API_KEY}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      )
+      
+      const data = await response.json()
+      console.log('Ответ от Airtable:', data)
+      
+      if (!data.records || data.records.length === 0) {
+        console.log('Нет записей с Кейс=1')
+        setCases([])
+        setLoading(false)
+        return
+      }
+      
+      // Группируем по проекту
+      const groupedCases: { [key: string]: CasePhoto[] } = {}
+      
+      data.records.forEach((record: any) => {
+        const projectName = record.fields['Объект'] || 'Проект'
+        const city = record.fields['Город'] || 'Крым'
+        
+        if (!groupedCases[projectName]) {
+          groupedCases[projectName] = []
+        }
+        
+        groupedCases[projectName].push({
+          id: record.id,
+          mediaUrl: record.fields['Ссылка'],
+          mediaType: record.fields['Тип файла'] === 'video/mp4' ? 'video' : 'image',
+          description: record.fields['Описание'],
+          projectName,
+          city
+        })
+      })
+      
+      console.log('Сгруппированные кейсы:', groupedCases)
+      
+      // Преобразуем в массив Case
+      const result = Object.values(groupedCases)
+        .slice(0, 3) // Ограничиваем до 3 кейсов
+        .map((photos, index) => ({
+          id: `case-${index + 1}`,
+          projectName: photos[0].projectName,
+          city: photos[0].city,
+          previewImage: photos[0].mediaUrl,
+          photos
+        }))
+      
+      console.log('Финальный результат:', result)
+      setCases(result)
+      setLoading(false)
+    } catch (error) {
+      console.error('Ошибка загрузки кейсов:', error)
+      setCases([])
+      setLoading(false)
     }
-  ]
+  }
+
+  const openCaseModal = (caseItem: Case) => {
+    setSelectedCase(caseItem)
+    setCurrentPhotoIndex(0)
+    setIsModalOpen(true)
+  }
+
+  const closeModal = () => {
+    setIsModalOpen(false)
+    setSelectedCase(null)
+    setCurrentPhotoIndex(0)
+  }
+
+  const nextPhoto = () => {
+    if (selectedCase && currentPhotoIndex < selectedCase.photos.length - 1) {
+      setCurrentPhotoIndex(currentPhotoIndex + 1)
+    }
+  }
+
+  const prevPhoto = () => {
+    if (currentPhotoIndex > 0) {
+      setCurrentPhotoIndex(currentPhotoIndex - 1)
+    }
+  }
+
+  if (loading) {
+    return (
+      <>
+        <Header />
+        <main className="min-h-screen bg-white">
+          <section className="py-24 bg-neutral-50">
+            <div className="container-custom">
+              <div className="mx-auto max-w-2xl text-center">
+                <h1 className="heading-xl mb-6">Наши кейсы</h1>
+                <p className="text-body text-neutral-600">Загружаем проекты...</p>
+              </div>
+            </div>
+          </section>
+        </main>
+      </>
+    )
+  }
 
   return (
     <>
@@ -73,35 +171,50 @@ export default function KeisyPage() {
           <div className="container-custom">
             <div className="space-y-24">
               {cases.map((caseItem) => (
-                <div key={caseItem.id} className="bg-neutral-50 rounded-2xl p-8 group cursor-pointer hover:shadow-lg transition-all duration-200" onClick={() => router.push(caseItem.projectUrl)}>
+                <div key={caseItem.id} className="bg-neutral-50 rounded-2xl p-8 group cursor-pointer hover:shadow-lg transition-all duration-200">
                   {/* Case Header */}
                   <div className="mb-8">
                     <div className="flex items-center gap-4 mb-4">
-                      <h2 className="heading-lg group-hover:text-neutral-700 transition-colors">{caseItem.title}</h2>
+                      <h2 className="heading-lg group-hover:text-neutral-700 transition-colors">
+                        {caseItem.projectName} - история успеха
+                      </h2>
                       <span className="inline-flex items-center rounded-full bg-neutral-200 px-3 py-1 text-xs font-medium text-neutral-700">
-                        {caseItem.location}
+                        {caseItem.city}
                       </span>
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                       <div>
-                        <span className="font-semibold text-neutral-900">Клиент:</span>
-                        <span className="text-neutral-600 ml-2">{caseItem.client}</span>
+                        <span className="font-semibold text-neutral-900">Проект:</span>
+                        <span className="text-neutral-600 ml-2">{caseItem.projectName}</span>
                       </div>
                       <div>
-                        <span className="font-semibold text-neutral-900">Бюджет:</span>
-                        <span className="text-neutral-600 ml-2">{caseItem.budget}</span>
+                        <span className="font-semibold text-neutral-900">Город:</span>
+                        <span className="text-neutral-600 ml-2">{caseItem.city}</span>
                       </div>
                       <div>
-                        <span className="font-semibold text-neutral-900">Срок:</span>
-                        <span className="text-neutral-600 ml-2">{caseItem.duration}</span>
+                        <span className="font-semibold text-neutral-900">Фото:</span>
+                        <span className="text-neutral-600 ml-2">{caseItem.photos.length} шт.</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Case Image */}
-                  <div className="aspect-[16/9] bg-neutral-100 rounded-xl mb-8 overflow-hidden group-hover:scale-[1.02] transition-transform duration-200">
-                    <div className="w-full h-full bg-gradient-to-br from-neutral-200 to-neutral-300 flex items-center justify-center">
+                  <div 
+                    className="aspect-[16/9] bg-neutral-100 rounded-xl mb-8 overflow-hidden group-hover:scale-[1.02] transition-transform duration-200 cursor-pointer"
+                    onClick={() => openCaseModal(caseItem)}
+                  >
+                    <img 
+                      src={caseItem.previewImage} 
+                      alt={`${caseItem.projectName} - ${caseItem.city}`}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement
+                        target.style.display = 'none'
+                        target.nextElementSibling?.classList.remove('hidden')
+                      }}
+                    />
+                    <div className="w-full h-full bg-gradient-to-br from-neutral-200 to-neutral-300 flex items-center justify-center hidden">
                       <svg className="w-16 h-16 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
@@ -111,41 +224,38 @@ export default function KeisyPage() {
                   {/* Case Content */}
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <div>
-                      <h3 className="font-semibold text-neutral-900 mb-3">Задача</h3>
-                      <p className="text-neutral-600 leading-relaxed">{caseItem.challenge}</p>
+                      <h3 className="font-semibold text-neutral-900 mb-3">Проект</h3>
+                      <p className="text-neutral-600 leading-relaxed">
+                        {caseItem.projectName} в городе {caseItem.city}. 
+                        Проект включает в себя качественную мебель с продуманным дизайном.
+                      </p>
                     </div>
                     
                     <div>
                       <h3 className="font-semibold text-neutral-900 mb-3">Решение</h3>
-                      <p className="text-neutral-600 leading-relaxed">{caseItem.solution}</p>
+                      <p className="text-neutral-600 leading-relaxed">
+                        Создали функциональное пространство с учетом всех пожеланий клиента. 
+                        Использовали качественные материалы и современные технологии.
+                      </p>
                     </div>
                     
                     <div>
                       <h3 className="font-semibold text-neutral-900 mb-3">Результат</h3>
-                      <p className="text-neutral-600 leading-relaxed">{caseItem.result}</p>
-                    </div>
-                  </div>
-
-                  {/* Testimonial */}
-                  <div className="mt-8 p-6 bg-white rounded-xl border border-neutral-200">
-                    <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 bg-neutral-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <svg className="w-6 h-6 text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                        </svg>
-                      </div>
-                      <div>
-                        <p className="text-neutral-600 italic mb-2">"{caseItem.testimonial}"</p>
-                        <p className="text-sm text-neutral-500">— Клиент</p>
-                      </div>
+                      <p className="text-neutral-600 leading-relaxed">
+                        Клиент доволен результатом. Пространство получилось уютным, 
+                        функциональным и стильным. Все детали продуманы до мелочей.
+                      </p>
                     </div>
                   </div>
 
                   {/* CTA Button */}
                   <div className="mt-6 text-center">
-                    <span className="btn-primary inline-block">
-                      Смотреть детали проекта
-                    </span>
+                    <button 
+                      className="btn-primary inline-block"
+                      onClick={() => openCaseModal(caseItem)}
+                    >
+                      Смотреть все фото ({caseItem.photos.length})
+                    </button>
                   </div>
                 </div>
               ))}
@@ -176,6 +286,93 @@ export default function KeisyPage() {
           </div>
         </section>
       </main>
+
+      {/* Modal для просмотра фотографий */}
+      {isModalOpen && selectedCase && (
+        <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4">
+          <div className="relative w-full max-w-6xl max-h-full">
+            {/* Кнопка закрытия */}
+            <button 
+              onClick={closeModal}
+              className="absolute top-4 right-4 z-10 text-white hover:text-gray-300 transition-colors"
+            >
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            {/* Навигация */}
+            {currentPhotoIndex > 0 && (
+              <button 
+                onClick={prevPhoto}
+                className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10 text-white hover:text-gray-300 transition-colors"
+              >
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+            )}
+
+            {currentPhotoIndex < selectedCase.photos.length - 1 && (
+              <button 
+                onClick={nextPhoto}
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 z-10 text-white hover:text-gray-300 transition-colors"
+              >
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            )}
+
+            {/* Фотография */}
+            <div className="w-full h-full flex items-center justify-center">
+              {selectedCase.photos[currentPhotoIndex].mediaType === 'video' ? (
+                <video 
+                  src={selectedCase.photos[currentPhotoIndex].mediaUrl}
+                  controls
+                  className="max-w-full max-h-full object-contain"
+                  autoPlay
+                  muted={false}
+                />
+              ) : (
+                <img 
+                  src={selectedCase.photos[currentPhotoIndex].mediaUrl}
+                  alt={`${selectedCase.projectName} - фото ${currentPhotoIndex + 1}`}
+                  className="max-w-full max-h-full object-contain"
+                />
+              )}
+            </div>
+
+            {/* Информация */}
+            <div className="absolute bottom-4 left-4 right-4 text-white text-center">
+              <h3 className="text-lg font-semibold mb-2">
+                {selectedCase.projectName} - {selectedCase.city}
+              </h3>
+              <p className="text-sm opacity-80">
+                Фото {currentPhotoIndex + 1} из {selectedCase.photos.length}
+              </p>
+              {selectedCase.photos[currentPhotoIndex].description && (
+                <p className="text-sm opacity-70 mt-2">
+                  {selectedCase.photos[currentPhotoIndex].description}
+                </p>
+              )}
+            </div>
+
+            {/* Индикаторы */}
+            <div className="absolute bottom-16 left-1/2 transform -translate-x-1/2 flex gap-2">
+              {selectedCase.photos.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentPhotoIndex(index)}
+                  className={`w-3 h-3 rounded-full transition-colors ${
+                    index === currentPhotoIndex ? 'bg-white' : 'bg-white bg-opacity-50'
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 } 
