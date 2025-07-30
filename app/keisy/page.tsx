@@ -26,9 +26,86 @@ interface Case {
   photos: CasePhoto[]
 }
 
+// Fallback данные на случай, если Airtable не работает
+const FALLBACK_CASES: Case[] = [
+  {
+    id: 'case-1',
+    projectName: 'Ирина',
+    city: 'Ялта',
+    previewImage: 'https://via.placeholder.com/800x600/4F46E5/FFFFFF?text=Кухня+Ирины',
+    photos: [
+      {
+        id: 'photo-1',
+        mediaUrl: 'https://via.placeholder.com/800x600/4F46E5/FFFFFF?text=Кухня+Ирины+1',
+        mediaType: 'image',
+        description: 'Современная кухня с островом',
+        projectName: 'Ирина',
+        city: 'Ялта'
+      },
+      {
+        id: 'photo-2',
+        mediaUrl: 'https://via.placeholder.com/800x600/7C3AED/FFFFFF?text=Кухня+Ирины+2',
+        mediaType: 'image',
+        description: 'Функциональная зона готовки',
+        projectName: 'Ирина',
+        city: 'Ялта'
+      }
+    ]
+  },
+  {
+    id: 'case-2',
+    projectName: 'Марина',
+    city: 'Феодосия',
+    previewImage: 'https://via.placeholder.com/800x600/059669/FFFFFF?text=Кухня+Марины',
+    photos: [
+      {
+        id: 'photo-3',
+        mediaUrl: 'https://via.placeholder.com/800x600/059669/FFFFFF?text=Кухня+Марины+1',
+        mediaType: 'image',
+        description: 'Элегантная кухня в классическом стиле',
+        projectName: 'Марина',
+        city: 'Феодосия'
+      },
+      {
+        id: 'photo-4',
+        mediaUrl: 'https://via.placeholder.com/800x600/DC2626/FFFFFF?text=Кухня+Марины+2',
+        mediaType: 'image',
+        description: 'Детали и фурнитура',
+        projectName: 'Марина',
+        city: 'Феодосия'
+      }
+    ]
+  },
+  {
+    id: 'case-3',
+    projectName: 'Тимур',
+    city: 'Бахчисарай',
+    previewImage: 'https://via.placeholder.com/800x600/EA580C/FFFFFF?text=Кухня+Тимура',
+    photos: [
+      {
+        id: 'photo-5',
+        mediaUrl: 'https://via.placeholder.com/800x600/EA580C/FFFFFF?text=Кухня+Тимура+1',
+        mediaType: 'image',
+        description: 'Минималистичная кухня',
+        projectName: 'Тимур',
+        city: 'Бахчисарай'
+      },
+      {
+        id: 'photo-6',
+        mediaUrl: 'https://via.placeholder.com/800x600/9333EA/FFFFFF?text=Кухня+Тимура+2',
+        mediaType: 'image',
+        description: 'Современные решения',
+        projectName: 'Тимур',
+        city: 'Бахчисарай'
+      }
+    ]
+  }
+]
+
 export default function KeisyPage() {
   const [cases, setCases] = useState<Case[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [selectedCase, setSelectedCase] = useState<Case | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0)
@@ -40,7 +117,9 @@ export default function KeisyPage() {
 
   async function loadCasesFromAirtable() {
     try {
-      console.log('Загружаем кейсы из Airtable...')
+      console.log('🔄 Загружаем кейсы из Airtable...')
+      console.log('📋 Конфигурация:', AIRTABLE_CONFIG)
+      
       const response = await fetch(
         `https://api.airtable.com/v0/${AIRTABLE_CONFIG.BASE_ID}/${AIRTABLE_CONFIG.TABLE_ID}?filterByFormula={Кейс}=1`,
         {
@@ -51,12 +130,18 @@ export default function KeisyPage() {
         }
       )
       
+      console.log('📡 Ответ от сервера:', response.status, response.statusText)
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      
       const data = await response.json()
-      console.log('Ответ от Airtable:', data)
+      console.log('📊 Данные от Airtable:', data)
       
       if (!data.records || data.records.length === 0) {
-        console.log('Нет записей с Кейс=1')
-        setCases([])
+        console.log('⚠️ Нет записей с Кейс=1, используем fallback данные')
+        setCases(FALLBACK_CASES)
         setLoading(false)
         return
       }
@@ -67,6 +152,8 @@ export default function KeisyPage() {
       data.records.forEach((record: any) => {
         const projectName = record.fields['Объект'] || 'Проект'
         const city = record.fields['Город'] || 'Крым'
+        
+        console.log('📝 Обрабатываем запись:', { projectName, city, fields: record.fields })
         
         if (!groupedCases[projectName]) {
           groupedCases[projectName] = []
@@ -82,7 +169,7 @@ export default function KeisyPage() {
         })
       })
       
-      console.log('Сгруппированные кейсы:', groupedCases)
+      console.log('📦 Сгруппированные кейсы:', groupedCases)
       
       // Преобразуем в массив Case
       const result = Object.values(groupedCases)
@@ -95,12 +182,14 @@ export default function KeisyPage() {
           photos
         }))
       
-      console.log('Финальный результат:', result)
+      console.log('✅ Финальный результат:', result)
       setCases(result)
       setLoading(false)
     } catch (error) {
-      console.error('Ошибка загрузки кейсов:', error)
-      setCases([])
+      console.error('❌ Ошибка загрузки кейсов:', error)
+      setError(error instanceof Error ? error.message : 'Неизвестная ошибка')
+      console.log('🔄 Используем fallback данные из-за ошибки')
+      setCases(FALLBACK_CASES)
       setLoading(false)
     }
   }
@@ -138,7 +227,10 @@ export default function KeisyPage() {
             <div className="container-custom">
               <div className="mx-auto max-w-2xl text-center">
                 <h1 className="heading-xl mb-6">Наши кейсы</h1>
-                <p className="text-body text-neutral-600">Загружаем проекты...</p>
+                <div className="flex items-center justify-center gap-2">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-600"></div>
+                  <p className="text-body text-neutral-600">Загружаем проекты...</p>
+                </div>
               </div>
             </div>
           </section>
@@ -162,6 +254,13 @@ export default function KeisyPage() {
                 Развернутые истории наших проектов. 
                 От задачи до результата - как мы решаем сложные вопросы.
               </p>
+              {error && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                  <p className="text-yellow-800 text-sm">
+                    ⚠️ Используем демо-данные. Ошибка загрузки: {error}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </section>
