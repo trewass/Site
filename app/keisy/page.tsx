@@ -2,6 +2,13 @@
 import Header from '@/components/Header'
 import { useState, useEffect } from 'react'
 
+// Константы контактов
+const CONTACT_INFO = {
+  WHATSAPP: '79780000000', // ← ЗАМЕНИ НА СВОЙ НОМЕР
+  TELEGRAM: 'https://t.me/yourusername', // ← ЗАМЕНИ НА СВОЙ TELEGRAM
+  PHONE: '+7 (978) 000-00-00' // ← ЗАМЕНИ НА СВОЙ ТЕЛЕФОН
+};
+
 // Airtable конфигурация - ИСПРАВЛЕННАЯ
 const AIRTABLE_CONFIG = {
   API_KEY: 'patQfujQaKiRKW0ix.9968ac4d5d84d30dc7f7ac663c993282324a6cfb07125313b2c58268f943b4ee',
@@ -35,6 +42,57 @@ function extractCityFromProjectName(projectName: string): string {
   if (name.includes('краснодар')) return 'Краснодар'
   if (name.includes('сочи')) return 'Сочи'
   return 'Крым'
+}
+
+// Функция для генерации описаний проектов
+function generateProjectDescription(projectName: string, city: string, photos: CasePhoto[]): {
+  task: string;
+  solution: string;
+  result: string;
+} {
+  // Ищем реальное описание в фотографиях
+  const realDescription = photos.find(photo => photo.description && photo.description.length > 10)?.description;
+  
+  if (realDescription) {
+    // Если есть реальное описание, используем его
+    return {
+      task: `Клиент ${projectName} из города ${city} обратился с задачей создания качественной мебели.`,
+      solution: realDescription,
+      result: "Получили функциональное пространство, которое полностью соответствует ожиданиям."
+    };
+  }
+  
+  // Генерируем на основе города и типа проекта
+  const cityDescriptions: { [key: string]: string } = {
+    'Ялта': 'в курортном городе с особыми требованиями к влажности и климату',
+    'Феодосия': 'в историческом городе с уникальной архитектурой',
+    'Бахчисарай': 'в городе с богатой историей, требующем особого подхода',
+    'Краснодар': 'в современном мегаполисе с высокими стандартами качества',
+    'Крым': 'в Крыму с учетом местных особенностей'
+  };
+  
+  const projectTypes: { [key: string]: { task: string; solution: string; result: string } } = {
+    'кухня': {
+      task: 'создания современной кухни с максимальной функциональностью',
+      solution: 'Спроектировали эргономичную кухню с качественными материалами: МДФ в эмали, столешница из искусственного камня, фурнитура Blum.',
+      result: 'Получили кухню мечты - красивую, функциональную и долговечную.'
+    },
+    'гардероб': {
+      task: 'организации системы хранения с максимальным использованием пространства',
+      solution: 'Создали индивидуальную систему хранения с выдвижными ящиками, штангами и полками.',
+      result: 'Теперь у клиента идеальный порядок и легкий доступ ко всем вещам.'
+    }
+  };
+  
+  const projectType = projectName.toLowerCase().includes('кухня') || projectName.toLowerCase().includes('марина') || projectName.toLowerCase().includes('ирина') ? 'кухня' : 'гардероб';
+  const locationDesc = cityDescriptions[city] || cityDescriptions['Крым'];
+  const typeDesc = projectTypes[projectType];
+  
+  return {
+    task: `Клиент ${projectName} из города ${city} обратился с задачей ${typeDesc.task} ${locationDesc}.`,
+    solution: typeDesc.solution,
+    result: typeDesc.result
+  };
 }
 
 // Fallback данные на случай, если Airtable не работает
@@ -164,8 +222,9 @@ export default function KeisyPage() {
       data.records.forEach((record: any) => {
         const projectName = record.fields['Объект'] || 'Проект'
         const city = extractCityFromProjectName(projectName)
+        const description = record.fields['Описание фото'] || record.fields['Описание'] || ''
         
-        console.log('📝 Обрабатываем запись:', { projectName, city, fields: record.fields })
+        console.log('📝 Обрабатываем запись:', { projectName, city, description, fields: record.fields })
         
         if (!groupedCases[projectName]) {
           groupedCases[projectName] = []
@@ -180,7 +239,7 @@ export default function KeisyPage() {
           id: record.id,
           mediaUrl: mediaUrl,
           mediaType: record.fields['Тип файла'] === 'video/mp4' ? 'video' : 'image',
-          description: record.fields['Описание фото'] || record.fields['Описание'] || '',
+          description: description, // ← РЕАЛЬНОЕ ОПИСАНИЕ
           projectName,
           city
         })
@@ -445,10 +504,23 @@ export default function KeisyPage() {
                         onClick={() => setCurrentPhotoIndex(index)}
                       >
                         {photo.mediaType === 'video' ? (
-                          <div className="w-full h-full bg-neutral-200 flex items-center justify-center">
-                            <svg className="w-8 h-8 text-neutral-500" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M8 5v14l11-7z"/>
-                            </svg>
+                          // ИСПРАВЛЕННОЕ ПРЕВЬЮ ВИДЕО:
+                          <div className="w-full h-full relative bg-neutral-200">
+                            <video 
+                              src={photo.mediaUrl}
+                              className="w-full h-full object-cover"
+                              muted
+                              preload="metadata"
+                              poster={photo.mediaUrl + '#t=1'} // Берет кадр с 1 секунды как превью
+                            />
+                            {/* Иконка play поверх превью */}
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <div className="bg-black bg-opacity-50 rounded-full p-3">
+                                <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                  <path d="M8 5v14l11-7z"/>
+                                </svg>
+                              </div>
+                            </div>
                           </div>
                         ) : (
                           <img 
@@ -465,30 +537,33 @@ export default function KeisyPage() {
                   <div className="mt-8">
                     <h3 className="text-lg font-semibold mb-4">История проекта</h3>
                     <div className="space-y-4">
-                      <div>
-                        <h4 className="font-medium text-neutral-900 mb-2">Задача</h4>
-                        <p className="text-sm text-neutral-600 leading-relaxed">
-                          Клиент {selectedCase.projectName} из города {selectedCase.city} обратился с задачей создания 
-                          функционального и стильного пространства. Требовалось учесть все пожелания семьи и 
-                          особенности помещения.
-                        </p>
-                      </div>
-                      
-                      <div>
-                        <h4 className="font-medium text-neutral-900 mb-2">Решение</h4>
-                        <p className="text-sm text-neutral-600 leading-relaxed">
-                          Наша команда разработала индивидуальный проект с использованием качественных материалов. 
-                          Особое внимание уделили эргономике и функциональности каждого элемента.
-                        </p>
-                      </div>
-                      
-                      <div>
-                        <h4 className="font-medium text-neutral-900 mb-2">Результат</h4>
-                        <p className="text-sm text-neutral-600 leading-relaxed">
-                          Получили современное пространство, которое полностью соответствует потребностям клиента. 
-                          Все детали продуманы, качество выполнения на высшем уровне.
-                        </p>
-                      </div>
+                      {(() => {
+                        const description = generateProjectDescription(selectedCase.projectName, selectedCase.city, selectedCase.photos);
+                        return (
+                          <>
+                            <div>
+                              <h4 className="font-medium text-neutral-900 mb-2">Задача</h4>
+                              <p className="text-sm text-neutral-600 leading-relaxed">
+                                {description.task}
+                              </p>
+                            </div>
+                            
+                            <div>
+                              <h4 className="font-medium text-neutral-900 mb-2">Решение</h4>
+                              <p className="text-sm text-neutral-600 leading-relaxed">
+                                {description.solution}
+                              </p>
+                            </div>
+                            
+                            <div>
+                              <h4 className="font-medium text-neutral-900 mb-2">Результат</h4>
+                              <p className="text-sm text-neutral-600 leading-relaxed">
+                                {description.result}
+                              </p>
+                            </div>
+                          </>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>
@@ -568,8 +643,10 @@ export default function KeisyPage() {
                     </h4>
                     <p className="text-sm text-neutral-600 leading-relaxed">
                       {selectedCase.photos[currentPhotoIndex].description || 
-                      `Фотография проекта ${selectedCase.projectName} в городе ${selectedCase.city}. 
-                      Демонстрирует качество выполненной работы и внимание к деталям.`}
+                      `Проект ${selectedCase.projectName}, ${selectedCase.city}. 
+                      ${selectedCase.photos[currentPhotoIndex].mediaType === 'video' 
+                        ? 'Видеообзор готового проекта, демонстрирующий качество и функциональность.' 
+                        : 'Качественная фотография, показывающая детали и общий вид проекта.'}`}
                     </p>
                     
                     {/* Технические детали */}
@@ -577,15 +654,30 @@ export default function KeisyPage() {
                       <span>Проект: {selectedCase.projectName}</span>
                       <span>Город: {selectedCase.city}</span>
                       <span>Тип: {selectedCase.photos[currentPhotoIndex].mediaType === 'video' ? 'Видео' : 'Фото'}</span>
+                      <span>Год: 2024</span>
                     </div>
                   </div>
 
                   {/* Кнопки действий */}
                   <div className="mt-6 flex gap-4">
-                    <button className="btn-primary">
+                    <button 
+                      className="btn-primary"
+                      onClick={() => {
+                        // Переход на WhatsApp с готовым сообщением
+                        const message = `Здравствуйте! Хочу заказать проект похожий на "${selectedCase.projectName}" из города ${selectedCase.city}. Обсудим детали?`;
+                        const whatsappUrl = `https://wa.me/${CONTACT_INFO.WHATSAPP}?text=${encodeURIComponent(message)}`;
+                        window.open(whatsappUrl, '_blank');
+                      }}
+                    >
                       Заказать похожий проект
                     </button>
-                    <button className="btn-secondary">
+                    <button 
+                      className="btn-secondary"
+                      onClick={() => {
+                        // Переход на страницу контактов
+                        window.location.href = '/contacts';
+                      }}
+                    >
                       Связаться с нами
                     </button>
                   </div>
