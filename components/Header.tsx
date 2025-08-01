@@ -2,7 +2,11 @@
 
 import { useState } from 'react'
 
-const Header = () => {
+interface HeaderProps {
+  onCallbackClick?: () => void
+}
+
+const Header = ({ onCallbackClick }: HeaderProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   const navigation = [
@@ -27,7 +31,7 @@ const Header = () => {
           </div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex space-x-1">
+          <nav className="hidden md:flex items-center space-x-1">
             {navigation.map((item) => (
               <a
                 key={item.name}
@@ -37,6 +41,12 @@ const Header = () => {
                 {item.name}
               </a>
             ))}
+            <button
+              onClick={onCallbackClick}
+              className="ml-4 px-4 py-2 bg-neutral-900 text-white text-sm font-medium rounded-lg hover:bg-neutral-800 transition-colors"
+            >
+              Бесплатный замер
+            </button>
           </nav>
 
           {/* Mobile menu button */}
@@ -70,6 +80,15 @@ const Header = () => {
                   {item.name}
                 </a>
               ))}
+              <button
+                onClick={() => {
+                  onCallbackClick?.()
+                  setIsMenuOpen(false)
+                }}
+                className="w-full mt-4 px-3 py-2 bg-neutral-900 text-white text-base font-medium rounded-md hover:bg-neutral-800 transition-colors"
+              >
+                Бесплатный замер
+              </button>
             </div>
           </div>
         )}

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
+import AOSProvider from '@/components/AOSProvider'
 
 export const metadata: Metadata = {
   title: 'Мебельная студия Александра Кожа | Крым/Краснодар',
@@ -21,7 +22,9 @@ export default function RootLayout({
   return (
     <html lang="ru">
       <body className="antialiased">
-        {children}
+        <AOSProvider>
+          {children}
+        </AOSProvider>
       </body>
     </html>
   )
