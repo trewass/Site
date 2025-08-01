@@ -138,12 +138,32 @@ export default function Stories() {
       setSelectedStory(story)
       setCurrentStoryIndex(index)
       setIsVideoPlaying(false)
+      
+      // Добавляем анимацию открытия
+      setTimeout(() => {
+        const modal = document.getElementById('storyModal')
+        if (modal) {
+          modal.classList.add('show')
+        }
+      }, 10)
     }
   }
 
   const closeStory = () => {
-    setSelectedStory(null)
-    setIsVideoPlaying(false)
+    const modal = document.getElementById('storyModal')
+    if (modal) {
+      modal.classList.add('hide')
+      
+      // Ждем окончания анимации закрытия
+      setTimeout(() => {
+        setSelectedStory(null)
+        setIsVideoPlaying(false)
+        modal.classList.remove('show', 'hide')
+      }, 300)
+    } else {
+      setSelectedStory(null)
+      setIsVideoPlaying(false)
+    }
   }
 
   const nextStory = () => {
@@ -241,86 +261,72 @@ export default function Stories() {
               &times;
             </button>
 
-            {/* Story Content */}
-            <div className="relative">
-              {/* Story Image/Video */}
-              <div className="story-media">
-                <img 
-                  id="storyImage"
-                  src={selectedStory.content.image} 
-                  alt={selectedStory.title}
-                  className="w-full h-auto max-h-90vh object-contain"
-                />
-                {/* Для видео добавим позже */}
-                <video 
-                  id="storyVideo"
-                  controls 
-                  playsInline
-                  className="w-full h-auto max-h-90vh object-contain hidden"
-                  onPlay={handleVideoPlay}
-                  onPause={handleVideoPause}
-                >
-                  <source src="" type="video/mp4" />
-                </video>
-              </div>
+            {/* Story Image/Video */}
+            <img 
+              id="storyImage"
+              src={selectedStory.content.image} 
+              alt={selectedStory.title}
+            />
+            
+            {/* Для видео добавим позже */}
+            <video 
+              id="storyVideo"
+              controls 
+              playsInline
+              className="hidden"
+              onPlay={handleVideoPlay}
+              onPause={handleVideoPause}
+            >
+              <source src="" type="video/mp4" />
+            </video>
 
-              {/* Story Info */}
-              <div className="story-info">
-                <h3 className="text-xl font-semibold mb-3">{selectedStory.title}</h3>
-                <p className="text-neutral-600 mb-6">
-                  {selectedStory.content.description}
-                </p>
+            {/* Navigation Arrows */}
+            <button
+              onClick={prevStory}
+              className="story-nav story-nav-prev"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
 
-                {/* Action Button */}
-                {selectedStory.content.actionButton && (
-                  <a 
-                    href={selectedStory.content.actionButton.link}
-                    className="btn-primary inline-block"
-                  >
-                    {selectedStory.content.actionButton.text}
-                  </a>
-                )}
-              </div>
-
-              {/* Navigation Arrows */}
-              <button
-                onClick={prevStory}
-                className="story-nav story-nav-prev"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-              </button>
-
-              <button
-                onClick={nextStory}
-                className="story-nav story-nav-next"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
-            </div>
+            <button
+              onClick={nextStory}
+              className="story-nav story-nav-next"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
           </div>
         </div>
       )}
 
       <style jsx>{`
+        /* Контейнер stories */
         .stories-container {
           display: flex;
-          gap: 10px;
+          gap: 15px;
           overflow-x: auto;
           padding: 20px 0;
+          scrollbar-width: none;
+          -ms-overflow-style: none;
           justify-content: center;
         }
 
+        .stories-container::-webkit-scrollbar {
+          display: none;
+        }
+
+        /* Превью stories (круглые) */
         .story-item {
           min-width: 80px;
           height: 80px;
           border-radius: 50%;
           overflow: hidden;
           cursor: pointer;
-          border: 2px solid #ff6b6b;
+          border: 3px solid #ff6b6b;
+          position: relative;
           transition: transform 0.3s ease;
         }
 
@@ -328,19 +334,16 @@ export default function Stories() {
           transform: scale(1.05);
         }
 
-        .story-preview {
+        /* Превью - здесь ОБРЕЗАЕМ для круглой формы */
+        .story-preview img,
+        .story-preview video {
           width: 100%;
           height: 100%;
-        }
-
-        .story-preview video,
-        .story-preview img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
+          object-fit: cover; /* cover для превью - обрезает под круг */
           object-position: center;
         }
 
+        /* Модальное окно stories */
         .story-modal {
           display: block;
           position: fixed;
@@ -349,7 +352,8 @@ export default function Stories() {
           left: 0;
           width: 100%;
           height: 100%;
-          background: rgba(0,0,0,0.9);
+          background: rgba(0, 0, 0, 0.9);
+          backdrop-filter: blur(10px);
         }
 
         .story-modal-content {
@@ -359,34 +363,60 @@ export default function Stories() {
           transform: translate(-50%, -50%);
           max-width: 90vw;
           max-height: 90vh;
-          background: white;
-          border-radius: 12px;
-          overflow: hidden;
-        }
-
-        .story-modal video,
-        .story-modal img {
-          width: 100%;
-          height: auto;
-          max-height: 90vh;
-          object-fit: contain;
-        }
-
-        .story-close {
-          position: absolute;
-          top: 10px;
-          right: 15px;
-          background: rgba(255,255,255,0.9);
-          border: none;
-          border-radius: 50%;
-          width: 30px;
-          height: 30px;
-          font-size: 20px;
-          cursor: pointer;
-          z-index: 10;
           display: flex;
           align-items: center;
           justify-content: center;
+        }
+
+        /* КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ - показать ПОЛНОЕ изображение */
+        .story-modal img {
+          max-width: 90vw;
+          max-height: 90vh;
+          width: auto;
+          height: auto;
+          object-fit: contain; /* ВАЖНО: contain показывает ПОЛНОЕ изображение */
+          object-position: center;
+          border-radius: 12px;
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .story-modal video {
+          max-width: 90vw;
+          max-height: 90vh;
+          width: auto;
+          height: auto;
+          object-fit: contain; /* ВАЖНО: contain показывает ПОЛНОЕ видео */
+          object-position: center;
+          border-radius: 12px;
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Кнопка закрытия */
+        .story-close {
+          position: absolute;
+          top: 20px;
+          right: 30px;
+          color: #fff;
+          font-size: 40px;
+          font-weight: bold;
+          cursor: pointer;
+          background: none;
+          border: none;
+          z-index: 10000;
+          width: 50px;
+          height: 50px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.2);
+          backdrop-filter: blur(10px);
+          transition: all 0.3s ease;
+        }
+
+        .story-close:hover {
+          background: rgba(255, 255, 255, 0.3);
+          transform: scale(1.1);
         }
 
         .story-info {
@@ -421,6 +451,55 @@ export default function Stories() {
           right: 10px;
         }
 
+        /* Анимации для модального окна */
+        .story-modal.show {
+          display: block;
+          animation: fadeIn 0.3s ease;
+        }
+
+        .story-modal.hide {
+          animation: fadeOut 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            backdrop-filter: blur(0px);
+          }
+          to {
+            opacity: 1;
+            backdrop-filter: blur(10px);
+          }
+        }
+
+        @keyframes fadeOut {
+          from {
+            opacity: 1;
+            backdrop-filter: blur(10px);
+          }
+          to {
+            opacity: 0;
+            backdrop-filter: blur(0px);
+          }
+        }
+
+        /* Анимация для контента */
+        .story-modal-content {
+          animation: zoomIn 0.3s ease;
+        }
+
+        @keyframes zoomIn {
+          from {
+            transform: translate(-50%, -50%) scale(0.8);
+            opacity: 0;
+          }
+          to {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
+          }
+        }
+
+        /* Мобильные устройства */
         @media (max-width: 768px) {
           .stories-container {
             justify-content: flex-start;
@@ -430,6 +509,20 @@ export default function Stories() {
           .story-item {
             min-width: 60px;
             height: 60px;
+          }
+
+          .story-modal img,
+          .story-modal video {
+            max-width: 95vw;
+            max-height: 85vh;
+          }
+          
+          .story-close {
+            top: 10px;
+            right: 15px;
+            font-size: 30px;
+            width: 40px;
+            height: 40px;
           }
         }
       `}</style>
