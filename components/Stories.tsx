@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { Navigation, Pagination } from 'swiper/modules'
 import 'swiper/css'
@@ -11,8 +11,8 @@ interface Story {
   id: number
   title: string
   preview: string
-  type: 'story' | 'project_gallery' // обычная story или переход на детальную страницу
-  projectUrl?: string // URL детальной страницы для project_gallery
+  type: 'story' | 'project_gallery'
+  projectUrl?: string
   content: {
     image: string
     description: string
@@ -101,7 +101,7 @@ const stories: Story[] = [
     type: "story",
     content: {
       image: "/api/placeholder/800/600",
-      description: "Точные замеры помещения - основа качественного проекта. Никаких приблизительных расчетов.",
+      description: "Профессиональные замеры помещения для точного расчета проекта.",
       actionButton: {
         text: "Заказать замер",
         link: "/contacts"
@@ -112,14 +112,13 @@ const stories: Story[] = [
     id: 7,
     title: "Готовый проект",
     preview: "/api/placeholder/90/110",
-    type: "project_gallery",
-    projectUrl: "/projects/kitchen-modern-1",
+    type: "story",
     content: {
       image: "/api/placeholder/800/600",
-      description: "Завершенный проект кухни-гостиной. Функциональность и эстетика в гармонии.",
+      description: "Финальный результат - красивая и функциональная мебель для вашего дома.",
       actionButton: {
-        text: "Смотреть все фото",
-        link: "/projects/kitchen-modern-1"
+        text: "Посмотреть работы",
+        link: "/raboty"
       }
     }
   }
@@ -128,6 +127,7 @@ const stories: Story[] = [
 export default function Stories() {
   const [selectedStory, setSelectedStory] = useState<Story | null>(null)
   const [currentStoryIndex, setCurrentStoryIndex] = useState(0)
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false)
 
   const openStory = (story: Story, index: number) => {
     if (story.type === 'project_gallery' && story.projectUrl) {
@@ -137,23 +137,27 @@ export default function Stories() {
       // Открытие полноэкранного просмотра обычной story
       setSelectedStory(story)
       setCurrentStoryIndex(index)
+      setIsVideoPlaying(false)
     }
   }
 
   const closeStory = () => {
     setSelectedStory(null)
+    setIsVideoPlaying(false)
   }
 
   const nextStory = () => {
     const nextIndex = (currentStoryIndex + 1) % stories.length
     setCurrentStoryIndex(nextIndex)
     setSelectedStory(stories[nextIndex])
+    setIsVideoPlaying(false)
   }
 
   const prevStory = () => {
     const prevIndex = currentStoryIndex === 0 ? stories.length - 1 : currentStoryIndex - 1
     setCurrentStoryIndex(prevIndex)
     setSelectedStory(stories[prevIndex])
+    setIsVideoPlaying(false)
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -164,6 +168,14 @@ export default function Stories() {
     } else if (e.key === 'ArrowLeft') {
       prevStory()
     }
+  }
+
+  const handleVideoPlay = () => {
+    setIsVideoPlaying(true)
+  }
+
+  const handleVideoPause = () => {
+    setIsVideoPlaying(false)
   }
 
   return (
@@ -180,68 +192,30 @@ export default function Stories() {
             </p>
           </div>
 
-          {/* Stories Swiper */}
-          <div className="relative">
-            <Swiper
-              modules={[Navigation, Pagination]}
-              spaceBetween={20}
-              slidesPerView={1}
-              navigation={{
-                nextEl: '.swiper-button-next',
-                prevEl: '.swiper-button-prev',
-              }}
-              pagination={{
-                clickable: true,
-                el: '.swiper-pagination',
-              }}
-                             breakpoints={{
-                 640: {
-                   slidesPerView: 4,
-                   spaceBetween: 20,
-                 },
-                 768: {
-                   slidesPerView: 6,
-                   spaceBetween: 20,
-                 },
-                 1024: {
-                   slidesPerView: 7,
-                   spaceBetween: 20,
-                 },
-               }}
-              className="stories-swiper"
-            >
+          {/* Stories Container */}
+          <div className="stories-container">
+            <div className="flex gap-4 overflow-x-auto justify-center">
               {stories.map((story, index) => (
-                <SwiperSlide key={story.id}>
-                  <div 
-                    className="flex flex-col items-center cursor-pointer group"
-                    onClick={() => openStory(story, index)}
-                  >
-                                         {/* Story Card */}
-                     <div className="relative mb-3">
-                       <div className="w-[70px] h-[85px] md:w-[90px] md:h-[110px] rounded-2xl overflow-hidden border-2 border-neutral-300 bg-gradient-to-br from-neutral-100 to-neutral-200 flex items-center justify-center group-hover:scale-105 transition-transform duration-200 shadow-sm">
-                         <div className="w-full h-full bg-gradient-to-br from-neutral-200 to-neutral-300 flex items-center justify-center">
-                           <svg className="w-6 h-6 md:w-8 md:h-8 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                           </svg>
-                         </div>
-                       </div>
-                     </div>
-                    
-                    {/* Story Title */}
-                    <p className="text-xs text-neutral-600 text-center max-w-20 leading-tight">
-                      {story.title}
-                    </p>
+                <div 
+                  key={story.id}
+                  className="story-item flex-shrink-0"
+                  data-story-id={story.id}
+                  onClick={() => openStory(story, index)}
+                >
+                  <div className="story-preview">
+                    {/* Пока используем плейсхолдеры, позже заменим на реальные данные из Airtable */}
+                    <img 
+                      src={story.preview} 
+                      alt={story.title}
+                      className="w-full h-full object-cover object-position-center"
+                    />
                   </div>
-                </SwiperSlide>
+                  <p className="text-xs text-neutral-600 text-center mt-2 max-w-20 leading-tight">
+                    {story.title}
+                  </p>
+                </div>
               ))}
-            </Swiper>
-
-            {/* Navigation Buttons */}
-            <div className="swiper-button-prev !text-neutral-400 !w-8 !h-8 !bg-white !rounded-full !shadow-md hover:!text-neutral-600 transition-colors"></div>
-            <div className="swiper-button-next !text-neutral-400 !w-8 !h-8 !bg-white !rounded-full !shadow-md hover:!text-neutral-600 transition-colors"></div>
-            
-            {/* Pagination */}
-            <div className="swiper-pagination !bottom-0 !relative mt-6"></div>
+            </div>
           </div>
         </div>
       </section>
@@ -249,48 +223,51 @@ export default function Stories() {
       {/* Fullscreen Story Modal */}
       {selectedStory && (
         <div 
-          className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4"
+          id="storyModal"
+          className="story-modal"
           onClick={closeStory}
           onKeyDown={handleKeyDown}
           tabIndex={0}
         >
           <div 
-            className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden"
+            className="story-modal-content"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Progress Bar */}
-            <div className="w-full h-1 bg-neutral-200">
-              <div 
-                className="h-full bg-neutral-900 transition-all duration-300"
-                style={{ width: `${((currentStoryIndex + 1) / stories.length) * 100}%` }}
-              ></div>
-            </div>
-
             {/* Close Button */}
             <button
+              className="story-close"
               onClick={closeStory}
-              className="absolute top-4 right-4 w-8 h-8 bg-white bg-opacity-80 rounded-full flex items-center justify-center hover:bg-opacity-100 transition-all z-10"
             >
-              <svg className="w-5 h-5 text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              &times;
             </button>
 
             {/* Story Content */}
             <div className="relative">
-              {/* Story Image */}
-              <div className="aspect-[4/3] bg-neutral-100 relative">
-                <div className="w-full h-full bg-gradient-to-br from-neutral-200 to-neutral-300 flex items-center justify-center">
-                  <svg className="w-16 h-16 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                </div>
+              {/* Story Image/Video */}
+              <div className="story-media">
+                <img 
+                  id="storyImage"
+                  src={selectedStory.content.image} 
+                  alt={selectedStory.title}
+                  className="w-full h-auto max-h-90vh object-contain"
+                />
+                {/* Для видео добавим позже */}
+                <video 
+                  id="storyVideo"
+                  controls 
+                  playsInline
+                  className="w-full h-auto max-h-90vh object-contain hidden"
+                  onPlay={handleVideoPlay}
+                  onPause={handleVideoPause}
+                >
+                  <source src="" type="video/mp4" />
+                </video>
               </div>
 
               {/* Story Info */}
-              <div className="p-6">
-                <h3 className="heading-md mb-3">{selectedStory.title}</h3>
-                <p className="text-body text-neutral-600 mb-6">
+              <div className="story-info">
+                <h3 className="text-xl font-semibold mb-3">{selectedStory.title}</h3>
+                <p className="text-neutral-600 mb-6">
                   {selectedStory.content.description}
                 </p>
 
@@ -308,18 +285,18 @@ export default function Stories() {
               {/* Navigation Arrows */}
               <button
                 onClick={prevStory}
-                className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white bg-opacity-80 rounded-full flex items-center justify-center hover:bg-opacity-100 transition-all"
+                className="story-nav story-nav-prev"
               >
-                <svg className="w-5 h-5 text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
               </button>
 
               <button
                 onClick={nextStory}
-                className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white bg-opacity-80 rounded-full flex items-center justify-center hover:bg-opacity-100 transition-all"
+                className="story-nav story-nav-next"
               >
-                <svg className="w-5 h-5 text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
               </button>
@@ -327,6 +304,135 @@ export default function Stories() {
           </div>
         </div>
       )}
+
+      <style jsx>{`
+        .stories-container {
+          display: flex;
+          gap: 10px;
+          overflow-x: auto;
+          padding: 20px 0;
+          justify-content: center;
+        }
+
+        .story-item {
+          min-width: 80px;
+          height: 80px;
+          border-radius: 50%;
+          overflow: hidden;
+          cursor: pointer;
+          border: 2px solid #ff6b6b;
+          transition: transform 0.3s ease;
+        }
+
+        .story-item:hover {
+          transform: scale(1.05);
+        }
+
+        .story-preview {
+          width: 100%;
+          height: 100%;
+        }
+
+        .story-preview video,
+        .story-preview img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          object-position: center;
+        }
+
+        .story-modal {
+          display: block;
+          position: fixed;
+          z-index: 9999;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: rgba(0,0,0,0.9);
+        }
+
+        .story-modal-content {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          max-width: 90vw;
+          max-height: 90vh;
+          background: white;
+          border-radius: 12px;
+          overflow: hidden;
+        }
+
+        .story-modal video,
+        .story-modal img {
+          width: 100%;
+          height: auto;
+          max-height: 90vh;
+          object-fit: contain;
+        }
+
+        .story-close {
+          position: absolute;
+          top: 10px;
+          right: 15px;
+          background: rgba(255,255,255,0.9);
+          border: none;
+          border-radius: 50%;
+          width: 30px;
+          height: 30px;
+          font-size: 20px;
+          cursor: pointer;
+          z-index: 10;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .story-info {
+          padding: 20px;
+        }
+
+        .story-nav {
+          position: absolute;
+          top: 50%;
+          transform: translateY(-50%);
+          background: rgba(255,255,255,0.9);
+          border: none;
+          border-radius: 50%;
+          width: 40px;
+          height: 40px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: background 0.3s ease;
+        }
+
+        .story-nav:hover {
+          background: rgba(255,255,255,1);
+        }
+
+        .story-nav-prev {
+          left: 10px;
+        }
+
+        .story-nav-next {
+          right: 10px;
+        }
+
+        @media (max-width: 768px) {
+          .stories-container {
+            justify-content: flex-start;
+            padding-left: 20px;
+          }
+          
+          .story-item {
+            min-width: 60px;
+            height: 60px;
+          }
+        }
+      `}</style>
     </>
   )
 } 

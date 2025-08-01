@@ -15,6 +15,7 @@ const Header = ({ onCallbackClick }: HeaderProps) => {
     { name: 'Услуги', href: '/uslugi' },
     { name: 'Процесс', href: '/process' },
     { name: 'Кейсы', href: '/keisy' },
+    { name: 'Блог', href: '/blog' },
     { name: 'Отзывы', href: '/otzyvy' },
     { name: 'Контакты', href: '/contacts' },
   ]
